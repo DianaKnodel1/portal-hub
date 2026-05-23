@@ -82,8 +82,34 @@ ok "Dump gespeichert: $WORKDIR/dump.pgcustom ($(du -h "$WORKDIR/dump.pgcustom" |
 # ────────────────────────────────────────────────────────────────────────────
 # 3) DATENBANK-RESTORE (Datei → eigener Supabase)
 # ────────────────────────────────────────────────────────────────────────────
-log "2/5  Datenbank-Restore auf deinen Supabase…"
+
+# 3a) SOURCE-COUNT VORHER prüfen — Schutz vor leerem/kaputtem Dump
+log "2a/5  Sanity-Check: Bewerber im Source zählen…"
+SRC_APPS=$(psql "$SOURCE_DB_URL" -tAc "SELECT count(*) FROM applications;" | tr -d '[:space:]')
+SRC_USERS=$(psql "$SOURCE_DB_URL" -tAc "SELECT count(*) FROM auth.users;" | tr -d '[:space:]')
+log "   Source: $SRC_APPS Bewerbungen · $SRC_USERS Auth-User"
+
+if [ "$SRC_APPS" -lt 100 ]; then
+  echo "  ⚠️  STOP: Source hat nur $SRC_APPS Bewerbungen — erwartet ≈1000."
+  echo "       Migration abgebrochen, um Datenverlust zu vermeiden."
+  echo "       Wenn das wirklich korrekt ist, setze MIN_APPS=$SRC_APPS und starte erneut."
+  [ "${MIN_APPS:-1000}" -gt "$SRC_APPS" ] && exit 1
+fi
+ok "Source-Daten sehen plausibel aus"
+
+# 3b) Backup des Targets ANLEGEN (falls da schon was drauf ist)
+log "2b/5  Target-Backup VOR Restore anlegen (Rollback-Sicherung)…"
+TARGET_BACKUP="$WORKDIR/target-backup-before-restore.pgcustom"
+pg_dump "$TARGET_DB_URL" \
+  --no-owner --no-privileges \
+  --schema=public --schema=auth --schema=storage \
+  --format=custom \
+  --file="$TARGET_BACKUP" 2>/dev/null || echo "  (Target ist leer — kein Backup nötig)"
+[ -f "$TARGET_BACKUP" ] && ok "Target-Backup: $TARGET_BACKUP ($(du -h "$TARGET_BACKUP" | cut -f1))"
+
+log "2c/5  Datenbank-Restore auf deinen Supabase…"
 echo    "      ⚠️  ACHTUNG: existierende public/auth-Tabellen werden überschrieben."
+echo    "      Quelle hat $SRC_APPS Bewerbungen und $SRC_USERS User — die werden migriert."
 read -rp "      Weiter? [yes/NO] " confirm
 [[ "$confirm" == "yes" ]] || { echo "Abgebrochen."; exit 1; }
 
@@ -99,12 +125,22 @@ pg_restore \
 
 ok "Datenbank importiert. Bewerber, Profile, KYC, Aufträge — alles drin."
 
-# Sanity-Check: Bewerbungs-Anzahl vergleichen
-SRC_COUNT=$(psql "$SOURCE_DB_URL" -tAc "SELECT count(*) FROM applications;")
-DST_COUNT=$(psql "$TARGET_DB_URL" -tAc "SELECT count(*) FROM applications;")
-log "Bewerbungen — Quelle: $SRC_COUNT  /  Ziel: $DST_COUNT"
-[[ "$SRC_COUNT" == "$DST_COUNT" ]] && ok "Anzahl identisch ✓" || \
-  echo "      ⚠️  Anzahl weicht ab — manuell prüfen!"
+# 3d) HARTER Sanity-Check NACH dem Restore — Migration nur grün wenn Counts matchen
+log "2d/5  Verifikation: Counts Source vs. Target"
+DST_APPS=$(psql "$TARGET_DB_URL" -tAc "SELECT count(*) FROM applications;" | tr -d '[:space:]')
+DST_USERS=$(psql "$TARGET_DB_URL" -tAc "SELECT count(*) FROM auth.users;" | tr -d '[:space:]')
+printf "   applications  : src=%s  dst=%s\n" "$SRC_APPS" "$DST_APPS"
+printf "   auth.users    : src=%s  dst=%s\n" "$SRC_USERS" "$DST_USERS"
+
+if [ "$SRC_APPS" != "$DST_APPS" ] || [ "$SRC_USERS" != "$DST_USERS" ]; then
+  echo ""
+  echo "  ❌ COUNTS WEICHEN AB — Migration NICHT abschließen!"
+  echo "     Target-Backup zum Rollback: $TARGET_BACKUP"
+  echo "     Rollback:  pg_restore --clean --if-exists -d \"\$TARGET_DB_URL\" \"$TARGET_BACKUP\""
+  exit 1
+fi
+ok "Counts identisch ✓ — alle Bewerber sind drüben."
+
 
 # ────────────────────────────────────────────────────────────────────────────
 # 4) STORAGE-BUCKETS SYNC (S3 → S3, ohne Zwischenkopie)
