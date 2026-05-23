@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>{{firmenname}} – Jetzt bewerben</title>
+<meta name="description" content="Werde Teil des Teams bei {{firmenname}}. Jetzt bewerben." />
+<link rel="canonical" href="https://{{landing_domain}}" />
+<link rel="icon" href="assets/favicon.ico" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="container header-inner">
+    <img src="assets/logo.png" alt="{{firmenname}}" class="logo" />
+    <a href="https://wa.me/{{whatsapp_number}}" class="whatsapp-btn">WhatsApp</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="container">
+      <h1>Werde Teil des Teams bei {{firmenname}}</h1>
+      <p class="lead">Faire Vergütung, flexible Arbeitszeiten und ein starkes Team. Bewirb dich in 2 Minuten.</p>
+      <a href="#bewerbung" class="cta">Jetzt bewerben</a>
+    </div>
+  </section>
+
+  <section id="bewerbung" class="form-section">
+    <div class="container">
+      <h2>Deine Bewerbung</h2>
+      <form id="application-form" novalidate>
+        <div class="row">
+          <label>Vor- und Nachname <input name="full_name" required maxlength="120" /></label>
+        </div>
+        <div class="row two">
+          <label>E-Mail <input name="email" type="email" required maxlength="255" /></label>
+          <label>Telefon <input name="phone" type="tel" maxlength="40" /></label>
+        </div>
+        <div class="row two">
+          <label>PLZ <input name="postal_code" maxlength="20" /></label>
+          <label>Stadt <input name="city" maxlength="120" /></label>
+        </div>
+        <div class="row">
+          <label>Nachricht <textarea name="message" rows="4" maxlength="2000"></textarea></label>
+        </div>
+        <button type="submit" class="cta">Bewerbung absenden</button>
+        <p class="status" id="form-status" role="status"></p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p><strong>{{firmenname}}</strong></p>
+    <p>{{strasse}}, {{plz}} {{stadt}}</p>
+    <p>Tel: {{telefon}} · {{telefon_2}} · E-Mail: <a href="mailto:{{email}}">{{email}}</a></p>
+    <p>Geschäftsführer: {{geschaeftsfuehrer}} · {{registergericht}} HRB {{hrb}}</p>
+    <p>USt-IdNr.: {{ust_id}} · Steuernummer: {{steuernummer}}</p>
+    <details><summary>Impressum</summary><pre>{{impressum}}</pre></details>
+    <p style="margin-top:1rem"><a href="datenschutz.html">Datenschutz</a></p>
+  </div>
+</footer>
+
+<script>
+window.PORTAL_API = "{{api_endpoint}}";
+window.PORTAL_URL = "{{portal_url}}";
+window.SUPABASE_URL = "{{supabase_url}}";
+window.SUPABASE_ANON_KEY = "{{supabase_anon_key}}";
+window.TENANT_ID = "{{tenant_id}}";
+</script>
+<script src="script.js"></script>
+</body>
+</html>
