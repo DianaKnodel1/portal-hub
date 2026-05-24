@@ -62,33 +62,24 @@ serve(async (req) => {
       return json({ error: "Tenant hat keine vollständige SMTP-Konfiguration" }, 400);
     }
 
-    // 2. User anlegen (NICHT bestätigt) – GoTrue versendet NICHTS, da fake SMTP & wir generateLink benutzen
-    const { data: created, error: cErr } = await supabaseAdmin.auth.admin.createUser({
+    // 2. User anlegen + Confirmation-Link in EINEM Call.
+    //    generateLink({type:'signup'}) erstellt den User automatisch und liefert den Link
+    //    zurück OHNE Mailversand durch GoTrue. (admin.createUser triggert auf Self-Host
+    //    mit MAILER_AUTOCONFIRM=false GoTrue's SMTP → fake SMTP → "Error sending confirmation mail".)
+    const redirectTo = redirect_to ?? `https://${tenant.domain}/dashboard`;
+    const { data: linkData, error: lErr } = await supabaseAdmin.auth.admin.generateLink({
+      type: "signup",
       email,
       password,
-      email_confirm: false,
-      user_metadata: { full_name: full_name ?? "" },
+      options: { data: { full_name: full_name ?? "" }, redirectTo },
     });
-
-    if (cErr || !created.user) {
-      return json({ error: cErr?.message ?? "User konnte nicht erstellt werden" }, 400);
+    if (lErr || !linkData?.properties?.action_link || !linkData?.user) {
+      return json({ error: lErr?.message ?? "Confirmation-Link konnte nicht generiert werden" }, 400);
     }
-
-    const userId = created.user.id;
+    const userId = linkData.user.id;
+    const actionLink = linkData.properties.action_link;
 
     try {
-      // 3. Confirmation-Link erzeugen (kein Mailversand durch GoTrue)
-      const redirectTo = redirect_to ?? `https://${tenant.domain}/dashboard`;
-      const { data: linkData, error: lErr } = await supabaseAdmin.auth.admin.generateLink({
-        type: "signup",
-        email,
-        password,
-        options: { redirectTo },
-      });
-      if (lErr || !linkData?.properties?.action_link) {
-        throw new Error(lErr?.message ?? "Confirmation-Link konnte nicht generiert werden");
-      }
-      const actionLink = linkData.properties.action_link;
 
       // 4. Mail rendern
       const senderName = tenant.sender_name ?? tenant.name;
