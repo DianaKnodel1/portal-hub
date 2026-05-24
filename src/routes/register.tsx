@@ -261,19 +261,24 @@ function RegisterPage() {
       const fullName = `${firstName.trim()} ${lastName.trim()}`;
       const trimmedEmail = email.trim();
 
-      // 1. Account anlegen
-      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-        email: trimmedEmail,
-        password,
-        options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin },
+      // 1. Account via Edge Function anlegen (sendet Confirmation-Mail über Tenant-SMTP)
+      const { data: fnData, error: fnErr } = await supabase.functions.invoke("send-signup-confirmation", {
+        body: {
+          email: trimmedEmail,
+          password,
+          tenant_id: tenantId,
+          full_name: fullName,
+          redirect_to: `${window.location.origin}/dashboard`,
+        },
       });
 
-      if (signUpErr) {
-        toast({ title: "Registrierung fehlgeschlagen", description: translateAuthError(signUpErr.message), variant: "destructive" });
+      if (fnErr || (fnData as any)?.error) {
+        const msg = (fnData as any)?.error ?? fnErr?.message ?? "Unbekannter Fehler";
+        toast({ title: "Registrierung fehlgeschlagen", description: translateAuthError(msg), variant: "destructive" });
         return;
       }
 
-      const newUserId = signUpData.user?.id;
+      const newUserId = (fnData as any)?.user_id;
       if (!newUserId) {
         toast({ title: "Fehler", description: "Account konnte nicht erstellt werden.", variant: "destructive" });
         return;
