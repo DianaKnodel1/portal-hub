@@ -398,12 +398,13 @@ function RegisterPage() {
                 </svg>
               </div>
               <div>
-                <h2 className="text-2xl font-heading font-bold text-foreground">Fast geschafft!</h2>
+                <h2 className="text-2xl font-heading font-bold text-foreground">Konto erstellt!</h2>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Wir haben dir eine E-Mail an <strong className="text-foreground">{email}</strong> gesendet.
-                  Bitte bestätige sie und logge dich anschließend ein.
+                  Dein Konto für <strong className="text-foreground">{email}</strong> wurde erfolgreich angelegt.
+                  Du kannst dich direkt einloggen.
                 </p>
               </div>
+
               <div className="rounded-xl border border-border bg-muted/30 p-4 text-left text-xs text-muted-foreground space-y-2">
                 <p className="font-semibold text-foreground">Nächste Schritte im Mitarbeiter-Portal:</p>
                 <ul className="space-y-1.5 list-disc list-inside">
