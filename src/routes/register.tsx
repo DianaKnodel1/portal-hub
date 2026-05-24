@@ -261,19 +261,24 @@ function RegisterPage() {
       const fullName = `${firstName.trim()} ${lastName.trim()}`;
       const trimmedEmail = email.trim();
 
-      // 1. Account anlegen
-      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-        email: trimmedEmail,
-        password,
-        options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin },
+      // 1. Account via Edge Function anlegen (sendet Confirmation-Mail über Tenant-SMTP)
+      const { data: fnData, error: fnErr } = await supabase.functions.invoke("send-signup-confirmation", {
+        body: {
+          email: trimmedEmail,
+          password,
+          tenant_id: tenantId,
+          full_name: fullName,
+          redirect_to: `${window.location.origin}/dashboard`,
+        },
       });
 
-      if (signUpErr) {
-        toast({ title: "Registrierung fehlgeschlagen", description: translateAuthError(signUpErr.message), variant: "destructive" });
+      if (fnErr || (fnData as any)?.error) {
+        const msg = (fnData as any)?.error ?? fnErr?.message ?? "Unbekannter Fehler";
+        toast({ title: "Registrierung fehlgeschlagen", description: translateAuthError(msg), variant: "destructive" });
         return;
       }
 
-      const newUserId = signUpData.user?.id;
+      const newUserId = (fnData as any)?.user_id;
       if (!newUserId) {
         toast({ title: "Fehler", description: "Account konnte nicht erstellt werden.", variant: "destructive" });
         return;
@@ -398,10 +403,10 @@ function RegisterPage() {
                 </svg>
               </div>
               <div>
-                <h2 className="text-2xl font-heading font-bold text-foreground">Konto erstellt!</h2>
+                <h2 className="text-2xl font-heading font-bold text-foreground">Fast geschafft!</h2>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Dein Konto für <strong className="text-foreground">{email}</strong> wurde erfolgreich angelegt.
-                  Du kannst dich direkt einloggen.
+                  Wir haben dir eine Bestätigungs-E-Mail an <strong className="text-foreground">{email}</strong> geschickt.
+                  Klicke auf den Link in der Mail, um deinen Account zu aktivieren – danach landest du direkt im Dashboard.
                 </p>
               </div>
 
