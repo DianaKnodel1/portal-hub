@@ -403,10 +403,10 @@ function RegisterPage() {
                 </svg>
               </div>
               <div>
-                <h2 className="text-2xl font-heading font-bold text-foreground">Konto erstellt!</h2>
+                <h2 className="text-2xl font-heading font-bold text-foreground">Fast geschafft!</h2>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Dein Konto für <strong className="text-foreground">{email}</strong> wurde erfolgreich angelegt.
-                  Du kannst dich direkt einloggen.
+                  Wir haben dir eine Bestätigungs-E-Mail an <strong className="text-foreground">{email}</strong> geschickt.
+                  Klicke auf den Link in der Mail, um deinen Account zu aktivieren – danach landest du direkt im Dashboard.
                 </p>
               </div>
 
