@@ -44,16 +44,10 @@ function LoginPage() {
       return;
     }
     if (data.user) {
-      if (!data.user.email_confirmed_at) {
-        await supabase.auth.signOut();
-        setNeedsVerify(true);
-        toast({
-          title: "E-Mail nicht bestätigt",
-          description: "Bitte bestätige zuerst deine E-Mail-Adresse, um dich anzumelden.",
-          variant: "destructive",
-        });
-        return;
-      }
+      // E-Mail-Verifikation ist deaktiviert (GOTRUE_MAILER_AUTOCONFIRM=true).
+      // Registrierung erfolgt über Invitation-Link – kein offener Signup.
+
+
 
       const { data: profile } = await supabase
         .from("profiles")
