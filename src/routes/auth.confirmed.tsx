@@ -16,12 +16,13 @@ function AuthConfirmedPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // GoTrue liefert die Session-Tokens im URL-Hash: #access_token=…&refresh_token=…&type=signup
-    const hash = window.location.hash.startsWith("#")
-      ? window.location.hash.slice(1)
-      : window.location.hash;
-    const params = new URLSearchParams(hash);
-    const errorDesc = params.get("error_description") ?? params.get("error");
+    const url = new URL(window.location.href);
+    const tokenHash = url.searchParams.get("token_hash");
+    const otpType = (url.searchParams.get("type") as "signup" | "email" | "recovery" | null) ?? "signup";
+
+    const hash = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : window.location.hash;
+    const hashParams = new URLSearchParams(hash);
+    const errorDesc = hashParams.get("error_description") ?? hashParams.get("error") ?? url.searchParams.get("error_description");
 
     if (errorDesc) {
       setState("error");
@@ -29,19 +30,31 @@ function AuthConfirmedPage() {
       return;
     }
 
-    // Wenn Session bereits gesetzt ist (durch detectSessionInUrl), reicht das.
     const finalize = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+      // 1. Neuer Flow: token_hash in der URL → jetzt im Browser einlösen
+      if (tokenHash) {
+        const { error } = await supabase.auth.verifyOtp({ type: otpType, token_hash: tokenHash });
+        if (error) {
+          setState("error");
+          setMessage(error.message);
+          return;
+        }
         setState("success");
-        // Hash entfernen, damit Reload sauber bleibt
         window.history.replaceState(null, "", "/auth/confirmed");
         setTimeout(() => navigate("/dashboard"), 1800);
         return;
       }
-      // Fallback: manuell aus Hash setzen
-      const access_token = params.get("access_token");
-      const refresh_token = params.get("refresh_token");
+
+      // 2. Alter Flow (Tokens kommen via Hash von GoTrue verify)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setState("success");
+        window.history.replaceState(null, "", "/auth/confirmed");
+        setTimeout(() => navigate("/dashboard"), 1800);
+        return;
+      }
+      const access_token = hashParams.get("access_token");
+      const refresh_token = hashParams.get("refresh_token");
       if (access_token && refresh_token) {
         const { error } = await supabase.auth.setSession({ access_token, refresh_token });
         if (error) {
@@ -54,7 +67,6 @@ function AuthConfirmedPage() {
         setTimeout(() => navigate("/dashboard"), 1800);
         return;
       }
-      // Kein Hash, keine Session → wahrscheinlich direkter Aufruf
       setState("success");
       setTimeout(() => navigate("/login"), 1800);
     };
