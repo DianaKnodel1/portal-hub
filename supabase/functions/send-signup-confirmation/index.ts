@@ -98,7 +98,16 @@ serve(async (req) => {
       }
     }
     const userId = linkData!.user!.id;
-    const actionLink = linkData!.properties!.action_link;
+    // WICHTIG: Wir verwenden NICHT properties.action_link (der wird von Mail-Scannern
+    // wie Gmail beim Prefetch konsumiert → otp_expired). Stattdessen bauen wir einen
+    // Link auf unsere eigene /auth/confirmed-Seite mit token_hash. Die Seite ruft
+    // verifyOtp() erst beim echten User-Klick im Browser auf.
+    const tokenHash = (linkData!.properties as any)?.hashed_token;
+    if (!tokenHash) {
+      return json({ error: "hashed_token fehlt in generateLink response" }, 500);
+    }
+    const confirmBase = redirect_to ?? `https://${tenant.domain}/auth/confirmed`;
+    const actionLink = `${confirmBase}?token_hash=${encodeURIComponent(tokenHash)}&type=signup`;
 
     try {
 
