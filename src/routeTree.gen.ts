@@ -18,6 +18,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as EmployeeRouteImport } from './routes/_employee'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AuthConfirmedRouteImport } from './routes/auth.confirmed'
 import { Route as AdminUploadsRouteImport } from './routes/admin.uploads'
 import { Route as AdminTransactionsRouteImport } from './routes/admin.transactions'
 import { Route as AdminTenantsRouteImport } from './routes/admin.tenants'
@@ -102,6 +103,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const AuthConfirmedRoute = AuthConfirmedRouteImport.update({
+  id: '/auth/confirmed',
+  path: '/auth/confirmed',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminUploadsRoute = AdminUploadsRouteImport.update({
   id: '/uploads',
@@ -346,6 +352,7 @@ export interface FileRoutesByFullPath {
   '/admin/tenants': typeof AdminTenantsRoute
   '/admin/transactions': typeof AdminTransactionsRoute
   '/admin/uploads': typeof AdminUploadsRoute
+  '/auth/confirmed': typeof AuthConfirmedRoute
   '/admin/': typeof AdminIndexRoute
   '/tasks/$assignmentId': typeof EmployeeTasksAssignmentIdRoute
   '/admin/applications/$appId': typeof AdminApplicationsAppIdRoute
@@ -395,6 +402,7 @@ export interface FileRoutesByTo {
   '/admin/tenants': typeof AdminTenantsRoute
   '/admin/transactions': typeof AdminTransactionsRoute
   '/admin/uploads': typeof AdminUploadsRoute
+  '/auth/confirmed': typeof AuthConfirmedRoute
   '/admin': typeof AdminIndexRoute
   '/tasks/$assignmentId': typeof EmployeeTasksAssignmentIdRoute
   '/admin/applications/$appId': typeof AdminApplicationsAppIdRoute
@@ -447,6 +455,7 @@ export interface FileRoutesById {
   '/admin/tenants': typeof AdminTenantsRoute
   '/admin/transactions': typeof AdminTransactionsRoute
   '/admin/uploads': typeof AdminUploadsRoute
+  '/auth/confirmed': typeof AuthConfirmedRoute
   '/admin/': typeof AdminIndexRoute
   '/_employee/tasks/$assignmentId': typeof EmployeeTasksAssignmentIdRoute
   '/admin/applications/$appId': typeof AdminApplicationsAppIdRoute
@@ -499,6 +508,7 @@ export interface FileRouteTypes {
     | '/admin/tenants'
     | '/admin/transactions'
     | '/admin/uploads'
+    | '/auth/confirmed'
     | '/admin/'
     | '/tasks/$assignmentId'
     | '/admin/applications/$appId'
@@ -548,6 +558,7 @@ export interface FileRouteTypes {
     | '/admin/tenants'
     | '/admin/transactions'
     | '/admin/uploads'
+    | '/auth/confirmed'
     | '/admin'
     | '/tasks/$assignmentId'
     | '/admin/applications/$appId'
@@ -599,6 +610,7 @@ export interface FileRouteTypes {
     | '/admin/tenants'
     | '/admin/transactions'
     | '/admin/uploads'
+    | '/auth/confirmed'
     | '/admin/'
     | '/_employee/tasks/$assignmentId'
     | '/admin/applications/$appId'
@@ -620,6 +632,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
+  AuthConfirmedRoute: typeof AuthConfirmedRoute
   ApiPublicApplicationsRoute: typeof ApiPublicApplicationsRoute
 }
 
@@ -687,6 +700,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/auth/confirmed': {
+      id: '/auth/confirmed'
+      path: '/auth/confirmed'
+      fullPath: '/auth/confirmed'
+      preLoaderRoute: typeof AuthConfirmedRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/uploads': {
       id: '/admin/uploads'
@@ -1088,18 +1108,9 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   UnsubscribeRoute: UnsubscribeRoute,
+  AuthConfirmedRoute: AuthConfirmedRoute,
   ApiPublicApplicationsRoute: ApiPublicApplicationsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
