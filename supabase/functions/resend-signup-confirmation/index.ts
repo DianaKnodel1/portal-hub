@@ -61,10 +61,13 @@ serve(async (req) => {
       email,
       options: { redirectTo },
     });
-    if (gErr || !linkData?.properties?.action_link) {
+    if (gErr || !linkData?.properties) {
       return json({ error: gErr?.message ?? "Confirmation-Link konnte nicht generiert werden" }, 400);
     }
-    const actionLink = linkData.properties.action_link;
+    // Token-Hash statt action_link (Gmail-Prefetch-Schutz, siehe send-signup-confirmation)
+    const tokenHash = (linkData.properties as any)?.hashed_token;
+    if (!tokenHash) return json({ error: "hashed_token fehlt" }, 500);
+    const actionLink = `${redirectTo}?token_hash=${encodeURIComponent(tokenHash)}&type=signup`;
 
     const senderName = tenant.sender_name ?? tenant.name;
     const senderEmail = tenant.sender_email ?? tenant.smtp_username;
