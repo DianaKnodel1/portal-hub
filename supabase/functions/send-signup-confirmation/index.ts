@@ -64,20 +64,41 @@ serve(async (req) => {
 
     // 2. User anlegen + Confirmation-Link in EINEM Call.
     //    generateLink({type:'signup'}) erstellt den User automatisch und liefert den Link
-    //    zurück OHNE Mailversand durch GoTrue. (admin.createUser triggert auf Self-Host
-    //    mit MAILER_AUTOCONFIRM=false GoTrue's SMTP → fake SMTP → "Error sending confirmation mail".)
-    const redirectTo = redirect_to ?? `https://${tenant.domain}/dashboard`;
-    const { data: linkData, error: lErr } = await supabaseAdmin.auth.admin.generateLink({
+    //    zurück OHNE Mailversand durch GoTrue.
+    const redirectTo = redirect_to ?? `https://${tenant.domain}/auth/confirmed`;
+    let { data: linkData, error: lErr } = await supabaseAdmin.auth.admin.generateLink({
       type: "signup",
       email,
       password,
       options: { data: { full_name: full_name ?? "" }, redirectTo },
     });
+
+    // Fallback: User existiert bereits. Wenn er NICHT bestätigt ist → neuen Link
+    // erzeugen und resenden. Wenn bestätigt → echter Fehler.
     if (lErr || !linkData?.properties?.action_link || !linkData?.user) {
-      return json({ error: lErr?.message ?? "Confirmation-Link konnte nicht generiert werden" }, 400);
+      const msg = (lErr?.message ?? "").toLowerCase();
+      const looksLikeExists = msg.includes("already") || msg.includes("registered") || msg.includes("exists");
+      if (looksLikeExists) {
+        const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+        const existing = list?.users.find((u) => (u.email ?? "").toLowerCase() === email.toLowerCase());
+        if (existing?.email_confirmed_at) {
+          return json({ error: "Diese E-Mail-Adresse ist bereits registriert und bestätigt. Bitte melde dich an." }, 409);
+        }
+        const retry = await supabaseAdmin.auth.admin.generateLink({
+          type: "signup",
+          email,
+          options: { redirectTo },
+        });
+        if (retry.error || !retry.data?.properties?.action_link || !retry.data?.user) {
+          return json({ error: retry.error?.message ?? "Confirmation-Link konnte nicht erzeugt werden" }, 400);
+        }
+        linkData = retry.data;
+      } else {
+        return json({ error: lErr?.message ?? "Confirmation-Link konnte nicht generiert werden" }, 400);
+      }
     }
-    const userId = linkData.user.id;
-    const actionLink = linkData.properties.action_link;
+    const userId = linkData!.user!.id;
+    const actionLink = linkData!.properties!.action_link;
 
     try {
 
