@@ -449,12 +449,25 @@ function RegisterPage() {
                 </ul>
                 <p className="pt-2">Dein Teamleiter begleitet dich dabei per Chat.</p>
               </div>
-              <button
-                onClick={() => { resetWizard(); navigate("/login"); }}
-                className="w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
-              >
-                Zum Login
-              </button>
+              <div className="space-y-2">
+                <button
+                  onClick={handleResendConfirmation}
+                  disabled={resending || resendCooldown > 0}
+                  className="w-full h-11 rounded-lg border border-border bg-card text-foreground text-sm font-medium hover:bg-muted/50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {resending
+                    ? "Wird gesendet…"
+                    : resendCooldown > 0
+                      ? `Erneut senden in ${resendCooldown}s`
+                      : "Keine E-Mail erhalten? Erneut senden"}
+                </button>
+                <button
+                  onClick={() => { resetWizard(); navigate("/login"); }}
+                  className="w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
+                >
+                  Zum Login
+                </button>
+              </div>
             </div>
           )}
         </CardContent>
