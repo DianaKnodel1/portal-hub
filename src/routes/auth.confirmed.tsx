@@ -41,7 +41,6 @@ function AuthConfirmedPage() {
         }
         setState("success");
         window.history.replaceState(null, "", "/auth/confirmed");
-        setTimeout(() => navigate("/dashboard"), 1800);
         return;
       }
 
@@ -50,7 +49,6 @@ function AuthConfirmedPage() {
       if (session) {
         setState("success");
         window.history.replaceState(null, "", "/auth/confirmed");
-        setTimeout(() => navigate("/dashboard"), 1800);
         return;
       }
       const access_token = hashParams.get("access_token");
@@ -64,7 +62,6 @@ function AuthConfirmedPage() {
         }
         setState("success");
         window.history.replaceState(null, "", "/auth/confirmed");
-        setTimeout(() => navigate("/dashboard"), 1800);
         return;
       }
       setState("success");
@@ -92,7 +89,7 @@ function AuthConfirmedPage() {
               E-Mail erfolgreich bestätigt
             </h1>
             <p className="mt-3 text-sm text-muted-foreground">
-              Dein Account ist jetzt aktiv. Du wirst automatisch weitergeleitet…
+              Dein Account ist jetzt aktiv. Du kannst jetzt ins Dashboard wechseln.
             </p>
             <button
               onClick={() => navigate("/dashboard")}
