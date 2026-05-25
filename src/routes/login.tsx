@@ -220,14 +220,6 @@ function LoginPage() {
                   className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-white/20 focus-visible:border-white/30"
                   required
                 />
-                <button
-                  type="button"
-                  onClick={resendVerify}
-                  disabled={!email.trim()}
-                  className="text-xs font-medium text-white/50 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Bestätigungs-E-Mail erneut senden
-                </button>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
