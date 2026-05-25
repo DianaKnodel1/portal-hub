@@ -268,7 +268,7 @@ function RegisterPage() {
           password,
           tenant_id: tenantId,
           full_name: fullName,
-          redirect_to: `${window.location.origin}/dashboard`,
+          redirect_to: `${window.location.origin}/auth/confirmed`,
         },
       });
 
