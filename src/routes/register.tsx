@@ -349,6 +349,36 @@ function RegisterPage() {
   const handleSaveOptional = async () => {};
   const handleSkipOptional = async () => { resetWizard(); navigate("/login"); };
 
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
+
+  const handleResendConfirmation = async () => {
+    if (!email.trim() || !tenantId || resendCooldown > 0) return;
+    setResending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("resend-signup-confirmation", {
+        body: { email: email.trim(), tenant_id: tenantId, redirect_to: `${window.location.origin}/auth/confirmed` },
+      });
+      if (error || (data as any)?.error) {
+        toast({ title: "Fehler", description: (data as any)?.error ?? error?.message ?? "Versand fehlgeschlagen", variant: "destructive" });
+        return;
+      }
+      if ((data as any)?.already_confirmed) {
+        toast({ title: "Bereits bestätigt", description: "Diese E-Mail ist schon aktiviert. Bitte melde dich an." });
+        return;
+      }
+      toast({ title: "E-Mail versendet", description: `Wir haben dir eine neue Bestätigungs-E-Mail an ${email.trim()} geschickt.` });
+      setResendCooldown(45);
+    } finally {
+      setResending(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/50 p-4 relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.03),transparent_50%)]" />
