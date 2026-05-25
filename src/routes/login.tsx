@@ -82,10 +82,23 @@ function LoginPage() {
   };
 
   const resendVerify = async () => {
-    if (!email.trim()) return;
-    const { error } = await supabase.auth.resend({ type: "signup", email: email.trim() });
-    if (error) toast({ title: "Fehler", description: error.message, variant: "destructive" });
-    else toast({ title: "Bestätigungs-E-Mail versendet", description: `An ${email.trim()}` });
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) return;
+    const tenantId = tenant?.id;
+    if (!tenantId) {
+      toast({ title: "Fehler", description: "Tenant konnte nicht ermittelt werden. Bitte lade die Seite neu.", variant: "destructive" });
+      return;
+    }
+    const { data, error } = await supabase.functions.invoke("resend-signup-confirmation", {
+      body: { email: trimmedEmail, tenant_id: tenantId, redirect_to: `${window.location.origin}/auth/confirmed` },
+    });
+    if (error || (data as any)?.error) {
+      toast({ title: "Fehler", description: (data as any)?.error ?? error?.message ?? "Versand fehlgeschlagen", variant: "destructive" });
+    } else if ((data as any)?.already_confirmed) {
+      toast({ title: "Bereits bestätigt", description: "Diese E-Mail ist schon aktiviert. Bitte melde dich an." });
+    } else {
+      toast({ title: "Bestätigungs-E-Mail versendet", description: `An ${trimmedEmail}` });
+    }
   };
 
   return (
@@ -207,6 +220,14 @@ function LoginPage() {
                   className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-white/20 focus-visible:border-white/30"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={resendVerify}
+                  disabled={!email.trim()}
+                  className="text-xs font-medium text-white/50 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Bestätigungs-E-Mail erneut senden
+                </button>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
