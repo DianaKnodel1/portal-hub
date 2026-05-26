@@ -18,20 +18,21 @@ interface TourStep {
 const STEPS: TourStep[] = [
   { id: "welcome",          title: "Willkommen im Team!",      text: "Führen Sie nun diese Tour durch, um einen Einblick in die Funktionen Ihres digitalen Arbeitsplatzes zu verschaffen.", route: "/dashboard", placement: "center" },
   { id: "help",             title: "Einführung starten",       text: "Sie können diese Einführung jederzeit noch einmal wiederholen, wenn Sie auf diesen Button klicken.", target: "[data-tour='help-button']", placement: "left" },
-  { id: "checklist",        title: "Die To-Do Liste",          text: "Ihre To-Do Liste gibt Ihnen Hinweise, was noch zu erledigen ist. Hier werden unter anderem aktive Aufträge oder andere Aufgaben angezeigt.", target: "[data-tour='tasks-list']", placement: "top" },
-  { id: "transactions",     title: "Transaktionen",            text: "In dieser Tabelle sehen Sie alle Ihre Transaktionen, darunter Gutschriften für erledigte Aufträge und Gehaltsauszahlungen.", target: "[data-tour='transactions']", placement: "top" },
-  { id: "upcoming",         title: "Termine",                  text: "Hier sehen Sie Ihre zukünftigen Termine. So haben Sie einen Überblick, welche Termine anstehen und können diese gegebenenfalls absagen.", target: "[data-tour='next-appointment']", placement: "left" },
+  { id: "checklist",        title: "Die To-Do Liste",          text: "Ihre To-Do Liste gibt Ihnen Hinweise, was noch zu erledigen ist. Hier werden unter anderem aktive Aufträge oder andere Aufgaben angezeigt.", target: "[data-tour='tasks-list'], [data-tour='checklist']", placement: "top" },
+  { id: "transactions",     title: "Transaktionen",            text: "In dieser Tabelle sehen Sie alle Ihre Transaktionen, darunter Gutschriften für erledigte Aufträge und Gehaltsauszahlungen.", target: "[data-tour='transactions'], [data-tour='balance']", placement: "top" },
+  { id: "upcoming",         title: "Termine",                  text: "Hier sehen Sie Ihre zukünftigen Termine. So haben Sie einen Überblick, welche Termine anstehen und können diese gegebenenfalls absagen.", target: "[data-tour='next-appointment'], [data-tour='nav-appointments']", placement: "left" },
   { id: "nav-appointments", title: "Termin buchen",            text: "Hier können Sie neue Termine buchen. Klicken Sie auf diesen Menüpunkt, um zur Terminbuchung zu gelangen.", target: "[data-tour='nav-appointments']", placement: "right" },
-  { id: "calendar",         title: "Terminkalender",           text: "Hier können Sie das Datum und die Uhrzeit für den nächsten Auftrag auswählen.", route: "/appointments", target: "[data-tour='calendar']", placement: "right" },
-  { id: "book-btn",         title: "Termin buchen",            text: "Mit diesem Button können Sie den ausgewählten Termin buchen.", route: "/appointments", target: "[data-tour='book-button']", placement: "right" },
+  { id: "calendar",         title: "Terminkalender",           text: "Über den Menüpunkt \"Termin buchen\" können Sie Datum und Uhrzeit für den nächsten Auftrag auswählen. (Verfügbar, sobald Sie freigeschaltet sind.)", target: "[data-tour='nav-appointments']", placement: "right" },
+  { id: "book-btn",         title: "Termin bestätigen",        text: "Innerhalb der Terminbuchung können Sie den gewählten Termin per Klick auf \"Termin buchen\" verbindlich anlegen.", target: "[data-tour='nav-appointments']", placement: "right" },
   { id: "nav-tasks",        title: "Aufträge",                 text: "Hier finden Sie alle Ihre Aufträge. Klicken Sie auf diesen Menüpunkt, um zur Auftragsübersicht zu gelangen.", target: "[data-tour='nav-tasks']", placement: "right" },
-  { id: "tasks-list",       title: "Auftragsübersicht",        text: "Hier sehen Sie alle Ihnen zugewiesenen Aufträge mit Status und Details. Klicken Sie auf einen Auftrag, um die einzelnen Schritte zu bearbeiten.", route: "/tasks", target: "[data-tour='tasks-list']", placement: "top" },
-  { id: "nav-documents",    title: "Upload Center",            text: "Im Upload Center können Sie wichtige Dokumente wie Ihren Ausweis oder andere Nachweise hochladen.", route: "/dashboard", target: "[data-tour='nav-documents']", placement: "right" },
+  { id: "tasks-list",       title: "Auftragsübersicht",        text: "Unter \"Aufträge\" sehen Sie alle Ihnen zugewiesenen Aufträge mit Status und Details. (Verfügbar, sobald Aufträge zugewiesen sind.)", target: "[data-tour='nav-tasks']", placement: "right" },
+  { id: "nav-documents",    title: "Upload Center",            text: "Im Upload Center können Sie wichtige Dokumente wie Ihren Ausweis oder andere Nachweise hochladen.", target: "[data-tour='nav-documents']", placement: "right" },
   { id: "nav-notifications",title: "Mitteilungen",             text: "Wichtige Mitteilungen und Ankündigungen Ihrer Teamleitung erhalten Sie in diesem Bereich.", target: "[data-tour='nav-notifications']", placement: "right" },
   { id: "nav-settings",     title: "Einstellungen",            text: "Unter Einstellungen können Sie Ihre persönlichen Daten, Passwort und Benachrichtigungen verwalten.", target: "[data-tour='nav-settings']", placement: "right" },
-  { id: "chat",             title: "Mitarbeiterchat",          text: "Sollten Fragen egal welcher Art auftreten, zögern Sie nicht Ihre Teamleitung über den Mitarbeiterchat zu kontaktieren.", target: "[data-tour='chat']", placement: "left" },
+  { id: "chat",             title: "Mitarbeiterchat",          text: "Sollten Fragen egal welcher Art auftreten, zögern Sie nicht Ihre Teamleitung über den Mitarbeiterchat zu kontaktieren.", target: "[data-tour='chat'], [data-tour='nav-chat']", placement: "left" },
   { id: "done",             title: "Tour abgeschlossen!",      text: "Sie kennen jetzt die wichtigsten Bereiche Ihres Arbeitsplatzes. Viel Erfolg bei Ihrer Tätigkeit – Ihre Teamleitung steht Ihnen jederzeit zur Seite.", placement: "center" },
 ];
+
 
 const TOTAL = STEPS.length;
 const STORAGE_PREFIX = "guided_tour_v2_";
