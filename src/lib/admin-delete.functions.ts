@@ -30,9 +30,10 @@ export const deleteEmployeeAccount = createServerFn({ method: "POST" })
     }
 
     const uid = data.user_id;
+    const sb = supabaseAdmin as any;
 
     // Schutz: keine Admins/Teamleiter über diesen Weg hart löschen
-    const { data: adminCheck } = await supabaseAdmin
+    const { data: adminCheck } = await sb
       .from("user_roles")
       .select("role")
       .eq("user_id", uid);
@@ -40,9 +41,8 @@ export const deleteEmployeeAccount = createServerFn({ method: "POST" })
       throw new Error("Admin-Accounts können nicht über diese Funktion gelöscht werden.");
     }
 
-    // Abhängige Daten aus public-Tabellen entfernen (best-effort, FKs greifen i.d.R. mit ON DELETE CASCADE).
-    const tables = [
-      "chat_messages",
+    // Abhängige Daten aus public-Tabellen entfernen
+    const tablesUserId = [
       "chat_conversations",
       "notifications",
       "kyc_verifications",
@@ -50,47 +50,45 @@ export const deleteEmployeeAccount = createServerFn({ method: "POST" })
       "task_assignments",
       "user_transactions",
       "contracts",
-      "activity_log",
       "uploads",
       "task_submissions",
       "task_sms_messages",
       "user_roles",
-      "profiles",
     ];
 
-    for (const t of tables) {
+    for (const t of tablesUserId) {
       try {
-        // bei chat_messages: sender ODER receiver
-        if (t === "chat_messages") {
-          await supabaseAdmin.from(t).delete().or(`sender_id.eq.${uid},receiver_id.eq.${uid}`);
-          continue;
-        }
-        if (t === "activity_log") {
-          await supabaseAdmin.from(t).delete().or(`actor_id.eq.${uid},entity_id.eq.${uid}`);
-          continue;
-        }
-        if (t === "profiles") {
-          await supabaseAdmin.from(t).delete().eq("user_id", uid);
-          continue;
-        }
-        // Default-Spalte user_id
-        await supabaseAdmin.from(t).delete().eq("user_id", uid);
+        await sb.from(t).delete().eq("user_id", uid);
       } catch {
-        // ignorieren – nicht jede Tabelle existiert / hat user_id
+        /* tolerate missing tables / columns */
       }
     }
+
+    try {
+      await sb.from("chat_messages").delete().or(`sender_id.eq.${uid},receiver_id.eq.${uid}`);
+    } catch {}
+
+    try {
+      await sb.from("activity_log").delete().or(`actor_id.eq.${uid},entity_id.eq.${uid}`);
+    } catch {}
+
+    try {
+      await sb.from("profiles").delete().eq("user_id", uid);
+    } catch {}
 
     // Auth-User löschen
     const { error: authErr } = await supabaseAdmin.auth.admin.deleteUser(uid);
     if (authErr) throw new Error(`Auth-Löschung fehlgeschlagen: ${authErr.message}`);
 
-    await supabaseAdmin.from("activity_log").insert({
-      action: "mitarbeiter_geloescht",
-      entity_type: "profile",
-      entity_id: uid,
-      actor_id: context.userId,
-      comment: "Mitarbeiter hart gelöscht (inkl. Auth-Account)",
-    }).catch(() => {});
+    try {
+      await sb.from("activity_log").insert({
+        action: "mitarbeiter_geloescht",
+        entity_type: "profile",
+        entity_id: uid,
+        actor_id: context.userId,
+        comment: "Mitarbeiter hart gelöscht (inkl. Auth-Account)",
+      });
+    } catch {}
 
     return { ok: true };
   });
