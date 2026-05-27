@@ -16,7 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   FileText, GraduationCap, ClipboardList, CalendarDays,
   Wallet, ArrowRight, CheckCircle2, Clock,
-  Lock, Circle, Timer, PartyPopper, TrendingUp,
+  Lock, Circle, Timer, PartyPopper, TrendingUp, ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNextStep } from "@/hooks/use-next-step";
@@ -156,14 +156,21 @@ function DashboardPage() {
   const canBookAppointments = profile?.status === "angenommen";
   const nextStep = nextStepResult;
 
+  const kycDone = kyc?.status === "verifiziert";
+  const kycSubmitted = kyc?.status === "verifiziert" || kyc?.status === "in_pruefung";
   const checklistItems = [
-    { id: "contract", label: "Vertrag unterschreiben", icon: FileText, done: contractSigned, path: "/contract", enabled: true },
-    { id: "onboarding", label: "Einführung abschließen", icon: GraduationCap, done: onboardingDone, path: "/onboarding", enabled: contractSigned },
-    { id: "appointment", label: "Ersten Termin buchen", icon: CalendarDays, done: hasAppointment, path: "/appointments", enabled: onboardingDone && canBookAppointments },
+    { id: "kyc", label: "Identität verifizieren", desc: "Lade deinen Personalausweis hoch, damit wir dich bestätigen können.", icon: ShieldCheck, done: kycDone, path: "/verification", enabled: true },
+    { id: "contract", label: "Arbeitsvertrag unterschreiben", desc: "Unterschreibe digital deinen Arbeitsvertrag.", icon: FileText, done: contractSigned, path: "/contract", enabled: true },
+    { id: "onboarding", label: "Einführung abschließen", desc: "Lerne in 6 kurzen Schritten die wichtigsten Abläufe kennen.", icon: GraduationCap, done: onboardingDone, path: "/onboarding", enabled: contractSigned },
+    { id: "appointment", label: "Ersten Termin buchen", desc: "Sobald wir deine Registrierung geprüft haben, kannst du deinen ersten Termin buchen.", icon: CalendarDays, done: hasAppointment, path: "/appointments", enabled: onboardingDone && canBookAppointments },
   ];
   const completedChecklist = checklistItems.filter((i) => i.done).length;
   const checklistProgress = (completedChecklist / checklistItems.length) * 100;
   const nextChecklistItem = checklistItems.find((i) => !i.done && i.enabled);
+  // Alle Mitarbeiter-seitigen Schritte sind erledigt (Vertrag + KYC eingereicht),
+  // aber das Profil ist noch nicht angenommen → Personalabteilung prüft.
+  const inReview = !fullyActive && !isDeactivated && contractSigned && kycSubmitted && profile?.status === "registriert";
+
 
   const greeting = () => {
     const h = new Date().getHours();
