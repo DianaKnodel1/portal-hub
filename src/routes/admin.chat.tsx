@@ -374,6 +374,7 @@ function AdminChatPage() {
                     <p className="text-sm font-medium text-foreground truncate">{conv.full_name}</p>
                     {statusBadge(conv.status)}
                   </div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{formatLastActive(conv.lastSignInAt)}</p>
                   {conv.lastMessage && (
                     <p className="text-xs text-muted-foreground truncate mt-0.5">{conv.lastMessage}</p>
                   )}
