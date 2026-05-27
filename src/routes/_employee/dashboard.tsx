@@ -249,16 +249,40 @@ function DashboardPage() {
       {/* ── ONBOARDING VIEW ── */}
       {!fullyActive && !isDeactivated && (
         <>
+          {/* Personalabteilung prüft Registrierung */}
+          {inReview && (
+            <Card className="animate-fade-in border-primary/15 bg-gradient-to-br from-primary/5 to-accent/5">
+              <CardContent className="py-5 px-6">
+                <div className="flex items-start gap-4">
+                  <div className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <Clock className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-heading font-bold text-foreground">Deine Registrierung wird geprüft</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Vielen Dank! Du hast alle erforderlichen Daten eingereicht.
+                      Unsere Personalabteilung prüft deine Unterlagen – das dauert in der Regel <strong>bis zu 24 Stunden</strong>.
+                      Sobald wir dich freigeschaltet haben, kannst du deinen ersten Termin buchen.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Next step CTA */}
-          {nextChecklistItem && (
+          {nextChecklistItem && !inReview && (
             <Card className="animate-fade-in overflow-hidden border-none shadow-xl bg-gradient-to-br from-primary via-primary to-primary/80">
               <CardContent className="py-7 px-6">
-                <p className="text-xs text-primary-foreground/60 uppercase tracking-wider font-medium mb-2">Nächster Schritt</p>
-                <div className="flex items-center gap-4">
+                <p className="text-xs text-primary-foreground/60 uppercase tracking-wider font-medium mb-2">Dein nächster Schritt</p>
+                <div className="flex items-start gap-4">
                   <div className="h-12 w-12 rounded-2xl bg-primary-foreground/15 flex items-center justify-center shrink-0">
                     <nextChecklistItem.icon className="h-6 w-6 text-primary-foreground" />
                   </div>
-                  <p className="font-heading font-bold text-lg text-primary-foreground flex-1">{nextChecklistItem.label}</p>
+                  <div className="flex-1">
+                    <p className="font-heading font-bold text-lg text-primary-foreground">{nextChecklistItem.label}</p>
+                    <p className="text-sm text-primary-foreground/80 mt-1 leading-relaxed">{nextChecklistItem.desc}</p>
+                  </div>
                 </div>
                 <Button
                   onClick={() => navigate(nextChecklistItem.path)}
@@ -282,6 +306,7 @@ function DashboardPage() {
               <Progress value={checklistProgress} className="h-2" />
             </CardContent>
           </Card>
+
 
           {/* Checklist */}
           <Card className="animate-fade-in" data-tour="checklist">
