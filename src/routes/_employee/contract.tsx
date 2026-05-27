@@ -12,7 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, CheckCircle2, Loader2, Download } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, Download, Briefcase } from "lucide-react";
 import StepContract from "@/components/register/StepContract";
 import { translateDbError } from "@/lib/db-errors";
 
@@ -222,6 +222,62 @@ function ContractPage() {
     const fullName = profile?.full_name ?? "";
     const [first, ...rest] = fullName.split(" ");
     const lastName = rest.join(" ");
+
+    // Inline-Auswahl der Beschäftigungsart, wenn noch nicht gesetzt
+    if (!profile?.employment_type) {
+      const setEmployment = async (type: "minijob" | "teilzeit" | "vollzeit") => {
+        if (!user) return;
+        const { error } = await supabase
+          .from("profiles")
+          .update({ employment_type: type as any })
+          .eq("user_id", user.id);
+        if (error) {
+          toast({ title: "Fehler", description: error.message, variant: "destructive" });
+          return;
+        }
+        setProfile({ ...profile, employment_type: type });
+      };
+      return (
+        <div className="p-6 lg:p-8 max-w-2xl mx-auto space-y-4">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}><ArrowLeft className="h-4 w-4" /></Button>
+            <h1 className="text-xl font-heading font-bold">Beschäftigungsart wählen</h1>
+          </div>
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Briefcase className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">Wie möchtest du bei uns arbeiten?</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Wähle deine Beschäftigungsart aus. Danach laden wir den passenden Arbeitsvertrag.
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                {(["minijob", "teilzeit", "vollzeit"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setEmployment(t)}
+                    className="text-left rounded-xl border border-border hover:border-primary/40 hover:bg-primary/5 transition-colors px-4 py-3"
+                  >
+                    <p className="font-medium text-foreground text-sm">{EMPLOYMENT_LABELS[t]}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {t === "minijob" && "Geringfügige Beschäftigung bis 538 € im Monat"}
+                      {t === "teilzeit" && "Teilzeitanstellung mit festgelegten Stunden"}
+                      {t === "vollzeit" && "Volle Anstellung mit 40 Stunden / Woche"}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
     return (
       <div className="p-6 lg:p-8 max-w-2xl mx-auto space-y-4">
         <div className="flex items-center gap-3">
