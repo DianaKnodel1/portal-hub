@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Download, CheckCircle2, XCircle, Power, Shield, Mail, User, MapPin, ShieldCheck, FileSignature, CalendarDays, ClipboardList, UserPlus } from "lucide-react";
+import { AlertTriangle, Download, CheckCircle2, XCircle, Power, Shield, Mail, User, MapPin, ShieldCheck, FileSignature, CalendarDays, ClipboardList, UserPlus, Trash2, Loader2 } from "lucide-react";
 import { CreateEmployeeWizard } from "@/components/admin/CreateEmployeeWizard";
 import { exportToCsv } from "@/lib/csv-export";
 import { TableSkeleton, PageHeaderSkeleton } from "@/components/SkeletonLoaders";
@@ -21,6 +21,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePagination } from "@/hooks/use-pagination";
 import { PaginationBar } from "@/components/PaginationBar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { deleteEmployeeAccount } from "@/lib/admin-delete.functions";
 
 type OnbStep = { key: string; label: string; done: boolean; icon: React.ComponentType<{ className?: string }> };
 
@@ -70,6 +72,25 @@ function AdminEmployeesPage() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ userId: string; name: string } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteEmployeeAccount({ data: { user_id: deleteTarget.userId, confirm: "MITARBEITER LÖSCHEN" } });
+      setProfiles((prev) => prev.filter((p) => p.user_id !== deleteTarget.userId));
+      toast({ title: "Mitarbeiter gelöscht", description: `${deleteTarget.name} wurde endgültig entfernt.` });
+      setDeleteTarget(null);
+      setDeleteConfirm("");
+    } catch (err: any) {
+      toast({ title: "Löschen fehlgeschlagen", description: err?.message ?? "Unbekannter Fehler", variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   useEffect(() => {
     supabase.from("tenants").select("id, name").then(({ data }) => {
