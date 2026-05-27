@@ -9,11 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
 import { Send, Bot, UserCheck, Search, MessageCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getLastSignIns } from "@/lib/last-sign-ins.functions";
 
 interface Conversation {
   user_id: string;
@@ -23,6 +25,7 @@ interface Conversation {
   unread: number;
   lastMessage?: string;
   lastAt?: string;
+  lastSignInAt?: string | null;
 }
 
 interface ChatMessage {
@@ -110,6 +113,29 @@ function AdminChatPage() {
 
     setConversations(list);
     setLoading(false);
+
+    // Letzten Login pro Mitarbeiter nachladen (Admin-RPC)
+    if (list.length > 0) {
+      try {
+        const map = await getLastSignIns({ data: { user_ids: list.map((c) => c.user_id) } });
+        setConversations((prev) => prev.map((c) => ({ ...c, lastSignInAt: map[c.user_id] ?? null })));
+      } catch (e) {
+        console.warn("Last sign-ins konnten nicht geladen werden:", e);
+      }
+    }
+  };
+
+  const formatLastActive = (ts?: string | null) => {
+    if (!ts) return "Noch nie eingeloggt";
+    const diff = Date.now() - new Date(ts).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 2) return "Gerade aktiv";
+    if (m < 60) return `Aktiv vor ${m} Min`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `Aktiv vor ${h} h`;
+    const d = Math.floor(h / 24);
+    if (d < 30) return `Aktiv vor ${d} Tagen`;
+    return `Aktiv am ${new Date(ts).toLocaleDateString("de-DE")}`;
   };
 
   const selectConversation = async (userId: string) => {
@@ -348,6 +374,7 @@ function AdminChatPage() {
                     <p className="text-sm font-medium text-foreground truncate">{conv.full_name}</p>
                     {statusBadge(conv.status)}
                   </div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{formatLastActive(conv.lastSignInAt)}</p>
                   {conv.lastMessage && (
                     <p className="text-xs text-muted-foreground truncate mt-0.5">{conv.lastMessage}</p>
                   )}
@@ -446,15 +473,16 @@ function AdminChatPage() {
 
             {/* Input */}
             <div className="border-t border-border bg-card px-5 py-3 shrink-0">
-              <div className="flex items-center gap-2">
-                <Input
+              <div className="flex items-end gap-2">
+                <Textarea
                   value={newMessage}
                   onChange={(e) => { setNewMessage(e.target.value); broadcastTyping(); }}
                   onKeyDown={handleKeyDown}
-                  placeholder="Nachricht schreiben…"
-                  className="flex-1"
+                  placeholder="Nachricht schreiben… (Shift + Enter = neue Zeile)"
+                  rows={1}
+                  className="flex-1 min-h-[40px] max-h-32 resize-none py-2"
                 />
-                <Button size="icon" onClick={sendMessage} disabled={!newMessage.trim() || sending}>
+                <Button size="icon" onClick={sendMessage} disabled={!newMessage.trim() || sending} className="shrink-0">
                   <Send className="h-4 w-4" />
                 </Button>
               </div>

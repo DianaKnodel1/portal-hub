@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Send, MessageCircle, ShieldCheck, BadgeCheck } from "lucide-react";
@@ -184,8 +184,12 @@ function ChatPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="relative">
-          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-            <span className="text-xs font-bold text-primary">{leaderInitials}</span>
+          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden">
+            {leader.avatar_url ? (
+              <img src={leader.avatar_url} alt={leader.name} className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-xs font-bold text-primary">{leaderInitials}</span>
+            )}
           </div>
           {leader.is_online && (
             <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-accent border-2 border-card" />
@@ -208,8 +212,12 @@ function ChatPage() {
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-1">
         {messages.length === 0 && !isTyping && (
           <div className="text-center py-12 px-6">
-            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/10 ring-4 ring-primary/5">
-              <span className="text-2xl font-bold text-primary">{leaderInitials}</span>
+            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/10 ring-4 ring-primary/5 overflow-hidden">
+              {leader.avatar_url ? (
+                <img src={leader.avatar_url} alt={leader.name} className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-2xl font-bold text-primary">{leaderInitials}</span>
+              )}
             </div>
             <p className="text-lg font-heading font-bold text-foreground">{leader.name}</p>
             <p className="text-xs text-muted-foreground mt-1">{leader.title || "Dein persönlicher Ansprechpartner"}</p>
@@ -267,8 +275,12 @@ function ChatPage() {
               ) : (
                 <div className={cn("flex items-end gap-2", isMine ? "justify-end" : "justify-start", sameSenderAsPrev ? "mt-0.5" : "mt-3")}>
                   {!isMine && (
-                    <div className={cn("h-7 w-7 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0 mb-1", sameSenderAsPrev && "invisible")}>
-                      <span className="text-[10px] font-bold text-primary">{leaderInitials}</span>
+                    <div className={cn("h-7 w-7 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0 mb-1 overflow-hidden", sameSenderAsPrev && "invisible")}>
+                      {leader.avatar_url ? (
+                        <img src={leader.avatar_url} alt={leader.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="text-[10px] font-bold text-primary">{leaderInitials}</span>
+                      )}
                     </div>
                   )}
                   <div
@@ -315,19 +327,20 @@ function ChatPage() {
 
       {/* Input */}
       <div className="border-t border-border bg-card px-5 py-3 shrink-0">
-        <div className="flex items-center gap-2">
-          <Input
+        <div className="flex items-end gap-2">
+          <Textarea
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Nachricht schreiben…"
-            className="flex-1 rounded-xl border-border/60 focus-visible:ring-primary/30"
+            placeholder="Nachricht schreiben… (Shift + Enter = neue Zeile)"
+            rows={1}
+            className="flex-1 rounded-xl border-border/60 focus-visible:ring-primary/30 min-h-[40px] max-h-32 resize-none py-2"
           />
           <Button
             size="icon"
             onClick={sendMessage}
             disabled={!newMessage.trim() || sending}
-            className="h-10 w-10 rounded-xl transition-all hover:scale-105 active:scale-95"
+            className="h-10 w-10 rounded-xl transition-all hover:scale-105 active:scale-95 shrink-0"
           >
             <Send className="h-4 w-4" />
           </Button>

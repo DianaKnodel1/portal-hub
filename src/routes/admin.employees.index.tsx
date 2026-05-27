@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Download, CheckCircle2, XCircle, Power, Shield, Mail, User, MapPin, ShieldCheck, FileSignature, CalendarDays, ClipboardList, UserPlus } from "lucide-react";
+import { AlertTriangle, Download, CheckCircle2, XCircle, Power, Shield, Mail, User, MapPin, ShieldCheck, FileSignature, CalendarDays, ClipboardList, UserPlus, Trash2, Loader2 } from "lucide-react";
 import { CreateEmployeeWizard } from "@/components/admin/CreateEmployeeWizard";
 import { exportToCsv } from "@/lib/csv-export";
 import { TableSkeleton, PageHeaderSkeleton } from "@/components/SkeletonLoaders";
@@ -21,6 +21,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePagination } from "@/hooks/use-pagination";
 import { PaginationBar } from "@/components/PaginationBar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { deleteEmployeeAccount } from "@/lib/admin-delete.functions";
 
 type OnbStep = { key: string; label: string; done: boolean; icon: React.ComponentType<{ className?: string }> };
 
@@ -70,6 +72,25 @@ function AdminEmployeesPage() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ userId: string; name: string } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteEmployeeAccount({ data: { user_id: deleteTarget.userId, confirm: "MITARBEITER LÖSCHEN" } });
+      setProfiles((prev) => prev.filter((p) => p.user_id !== deleteTarget.userId));
+      toast({ title: "Mitarbeiter gelöscht", description: `${deleteTarget.name} wurde endgültig entfernt.` });
+      setDeleteTarget(null);
+      setDeleteConfirm("");
+    } catch (err: any) {
+      toast({ title: "Löschen fehlgeschlagen", description: err?.message ?? "Unbekannter Fehler", variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   useEffect(() => {
     supabase.from("tenants").select("id, name").then(({ data }) => {
@@ -253,6 +274,17 @@ function AdminEmployeesPage() {
                           <Power className="h-3 w-3" /> Aktivieren
                         </Button>
                       )}
+                      {!isAdmin && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-[10px] gap-1 px-2 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                          onClick={(e) => { e.stopPropagation(); setDeleteTarget({ userId: profile.user_id, name: profile.full_name }); setDeleteConfirm(""); }}
+                          title="Endgültig löschen"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -264,6 +296,44 @@ function AdminEmployeesPage() {
           <PaginationBar page={page} pageCount={pageCount} setPage={setPage} rangeFrom={rangeFrom} rangeTo={rangeTo} total={total} />
         </div>
       </div>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) { setDeleteTarget(null); setDeleteConfirm(""); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" /> Mitarbeiter endgültig löschen
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>
+                  <strong className="text-foreground">{deleteTarget?.name}</strong> wird vollständig aus der Datenbank entfernt
+                  – inklusive Auth-Account, Chat, Verträgen, Aufgaben, KYC und Uploads.
+                </p>
+                <p>Dieser Vorgang ist <strong>nicht umkehrbar</strong>.</p>
+                <p>Tippe zur Bestätigung <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">MITARBEITER LÖSCHEN</code> ein:</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            value={deleteConfirm}
+            onChange={(e) => setDeleteConfirm(e.target.value)}
+            placeholder="MITARBEITER LÖSCHEN"
+            autoFocus
+            className="font-mono"
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteConfirm !== "MITARBEITER LÖSCHEN" || deleting}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              Endgültig löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

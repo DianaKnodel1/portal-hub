@@ -16,7 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   FileText, GraduationCap, ClipboardList, CalendarDays,
   Wallet, ArrowRight, CheckCircle2, Clock,
-  Lock, Circle, Timer, PartyPopper, TrendingUp,
+  Lock, Circle, Timer, PartyPopper, TrendingUp, ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNextStep } from "@/hooks/use-next-step";
@@ -156,14 +156,21 @@ function DashboardPage() {
   const canBookAppointments = profile?.status === "angenommen";
   const nextStep = nextStepResult;
 
+  const kycDone = kyc?.status === "verifiziert";
+  const kycSubmitted = kyc?.status === "verifiziert" || kyc?.status === "in_pruefung";
   const checklistItems = [
-    { id: "contract", label: "Vertrag unterschreiben", icon: FileText, done: contractSigned, path: "/contract", enabled: true },
-    { id: "onboarding", label: "Einführung abschließen", icon: GraduationCap, done: onboardingDone, path: "/onboarding", enabled: contractSigned },
-    { id: "appointment", label: "Ersten Termin buchen", icon: CalendarDays, done: hasAppointment, path: "/appointments", enabled: onboardingDone && canBookAppointments },
+    { id: "kyc", label: "Identität verifizieren", desc: "Lade deinen Personalausweis hoch, damit wir dich bestätigen können.", icon: ShieldCheck, done: kycDone, path: "/verification", enabled: true },
+    { id: "contract", label: "Arbeitsvertrag unterschreiben", desc: "Unterschreibe digital deinen Arbeitsvertrag.", icon: FileText, done: contractSigned, path: "/contract", enabled: true },
+    { id: "onboarding", label: "Einführung abschließen", desc: "Lerne in 6 kurzen Schritten die wichtigsten Abläufe kennen.", icon: GraduationCap, done: onboardingDone, path: "/onboarding", enabled: contractSigned },
+    { id: "appointment", label: "Ersten Termin buchen", desc: "Sobald wir deine Registrierung geprüft haben, kannst du deinen ersten Termin buchen.", icon: CalendarDays, done: hasAppointment, path: "/appointments", enabled: onboardingDone && canBookAppointments },
   ];
   const completedChecklist = checklistItems.filter((i) => i.done).length;
   const checklistProgress = (completedChecklist / checklistItems.length) * 100;
   const nextChecklistItem = checklistItems.find((i) => !i.done && i.enabled);
+  // Alle Mitarbeiter-seitigen Schritte sind erledigt (Vertrag + KYC eingereicht),
+  // aber das Profil ist noch nicht angenommen → Personalabteilung prüft.
+  const inReview = !fullyActive && !isDeactivated && contractSigned && kycSubmitted && profile?.status === "registriert";
+
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -242,16 +249,40 @@ function DashboardPage() {
       {/* ── ONBOARDING VIEW ── */}
       {!fullyActive && !isDeactivated && (
         <>
+          {/* Personalabteilung prüft Registrierung */}
+          {inReview && (
+            <Card className="animate-fade-in border-primary/15 bg-gradient-to-br from-primary/5 to-accent/5">
+              <CardContent className="py-5 px-6">
+                <div className="flex items-start gap-4">
+                  <div className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <Clock className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-heading font-bold text-foreground">Deine Registrierung wird geprüft</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Vielen Dank! Du hast alle erforderlichen Daten eingereicht.
+                      Unsere Personalabteilung prüft deine Unterlagen – das dauert in der Regel <strong>bis zu 24 Stunden</strong>.
+                      Sobald wir dich freigeschaltet haben, kannst du deinen ersten Termin buchen.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Next step CTA */}
-          {nextChecklistItem && (
+          {nextChecklistItem && !inReview && (
             <Card className="animate-fade-in overflow-hidden border-none shadow-xl bg-gradient-to-br from-primary via-primary to-primary/80">
               <CardContent className="py-7 px-6">
-                <p className="text-xs text-primary-foreground/60 uppercase tracking-wider font-medium mb-2">Nächster Schritt</p>
-                <div className="flex items-center gap-4">
+                <p className="text-xs text-primary-foreground/60 uppercase tracking-wider font-medium mb-2">Dein nächster Schritt</p>
+                <div className="flex items-start gap-4">
                   <div className="h-12 w-12 rounded-2xl bg-primary-foreground/15 flex items-center justify-center shrink-0">
                     <nextChecklistItem.icon className="h-6 w-6 text-primary-foreground" />
                   </div>
-                  <p className="font-heading font-bold text-lg text-primary-foreground flex-1">{nextChecklistItem.label}</p>
+                  <div className="flex-1">
+                    <p className="font-heading font-bold text-lg text-primary-foreground">{nextChecklistItem.label}</p>
+                    <p className="text-sm text-primary-foreground/80 mt-1 leading-relaxed">{nextChecklistItem.desc}</p>
+                  </div>
                 </div>
                 <Button
                   onClick={() => navigate(nextChecklistItem.path)}
@@ -275,6 +306,7 @@ function DashboardPage() {
               <Progress value={checklistProgress} className="h-2" />
             </CardContent>
           </Card>
+
 
           {/* Checklist */}
           <Card className="animate-fade-in" data-tour="checklist">
