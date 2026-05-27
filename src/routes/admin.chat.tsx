@@ -113,6 +113,29 @@ function AdminChatPage() {
 
     setConversations(list);
     setLoading(false);
+
+    // Letzten Login pro Mitarbeiter nachladen (Admin-RPC)
+    if (list.length > 0) {
+      try {
+        const map = await getLastSignIns({ data: { user_ids: list.map((c) => c.user_id) } });
+        setConversations((prev) => prev.map((c) => ({ ...c, lastSignInAt: map[c.user_id] ?? null })));
+      } catch (e) {
+        console.warn("Last sign-ins konnten nicht geladen werden:", e);
+      }
+    }
+  };
+
+  const formatLastActive = (ts?: string | null) => {
+    if (!ts) return "Noch nie eingeloggt";
+    const diff = Date.now() - new Date(ts).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 2) return "Gerade aktiv";
+    if (m < 60) return `Aktiv vor ${m} Min`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `Aktiv vor ${h} h`;
+    const d = Math.floor(h / 24);
+    if (d < 30) return `Aktiv vor ${d} Tagen`;
+    return `Aktiv am ${new Date(ts).toLocaleDateString("de-DE")}`;
   };
 
   const selectConversation = async (userId: string) => {
