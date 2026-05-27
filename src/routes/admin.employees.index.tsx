@@ -274,6 +274,17 @@ function AdminEmployeesPage() {
                           <Power className="h-3 w-3" /> Aktivieren
                         </Button>
                       )}
+                      {!isAdmin && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-[10px] gap-1 px-2 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                          onClick={(e) => { e.stopPropagation(); setDeleteTarget({ userId: profile.user_id, name: profile.full_name }); setDeleteConfirm(""); }}
+                          title="Endgültig löschen"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -285,6 +296,44 @@ function AdminEmployeesPage() {
           <PaginationBar page={page} pageCount={pageCount} setPage={setPage} rangeFrom={rangeFrom} rangeTo={rangeTo} total={total} />
         </div>
       </div>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) { setDeleteTarget(null); setDeleteConfirm(""); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" /> Mitarbeiter endgültig löschen
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>
+                  <strong className="text-foreground">{deleteTarget?.name}</strong> wird vollständig aus der Datenbank entfernt
+                  – inklusive Auth-Account, Chat, Verträgen, Aufgaben, KYC und Uploads.
+                </p>
+                <p>Dieser Vorgang ist <strong>nicht umkehrbar</strong>.</p>
+                <p>Tippe zur Bestätigung <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">MITARBEITER LÖSCHEN</code> ein:</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            value={deleteConfirm}
+            onChange={(e) => setDeleteConfirm(e.target.value)}
+            placeholder="MITARBEITER LÖSCHEN"
+            autoFocus
+            className="font-mono"
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteConfirm !== "MITARBEITER LÖSCHEN" || deleting}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              Endgültig löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
