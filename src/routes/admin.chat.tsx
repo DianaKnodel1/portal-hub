@@ -9,11 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
 import { Send, Bot, UserCheck, Search, MessageCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getLastSignIns } from "@/lib/last-sign-ins.functions";
 
 interface Conversation {
   user_id: string;
@@ -23,6 +25,7 @@ interface Conversation {
   unread: number;
   lastMessage?: string;
   lastAt?: string;
+  lastSignInAt?: string | null;
 }
 
 interface ChatMessage {
