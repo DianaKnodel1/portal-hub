@@ -473,15 +473,16 @@ function AdminChatPage() {
 
             {/* Input */}
             <div className="border-t border-border bg-card px-5 py-3 shrink-0">
-              <div className="flex items-center gap-2">
-                <Input
+              <div className="flex items-end gap-2">
+                <Textarea
                   value={newMessage}
                   onChange={(e) => { setNewMessage(e.target.value); broadcastTyping(); }}
                   onKeyDown={handleKeyDown}
-                  placeholder="Nachricht schreiben…"
-                  className="flex-1"
+                  placeholder="Nachricht schreiben… (Shift + Enter = neue Zeile)"
+                  rows={1}
+                  className="flex-1 min-h-[40px] max-h-32 resize-none py-2"
                 />
-                <Button size="icon" onClick={sendMessage} disabled={!newMessage.trim() || sending}>
+                <Button size="icon" onClick={sendMessage} disabled={!newMessage.trim() || sending} className="shrink-0">
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
