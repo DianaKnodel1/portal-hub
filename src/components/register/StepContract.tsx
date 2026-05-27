@@ -46,23 +46,34 @@ export default function StepContract({
       let companyName = "";
       let companyCeoName = "";
 
-      // Resolve tenant id (fallback to first active tenant for preview)
+      // Resolve tenant id (fallback to first active tenant for preview/landing)
       let resolvedTenantId = tenantId;
-      if (!resolvedTenantId) {
-        const { data } = await (supabase.rpc as any)("get_first_active_public_tenant");
-        const row = Array.isArray(data) ? data[0] : data;
-        if (row?.id) resolvedTenantId = row.id;
+      let tenantRow: any = null;
+
+      if (resolvedTenantId) {
+        // Load actual tenant by ID (works for authenticated users via RLS)
+        const { data: t } = await supabase
+          .from("tenants")
+          .select("id, name, company_ceo_name, company_signature_url")
+          .eq("id", resolvedTenantId)
+          .maybeSingle();
+        if (t) tenantRow = t;
       }
 
-      // Load tenant data
-      if (resolvedTenantId) {
-        const { data: tenant } = await (supabase.rpc as any)("get_first_active_public_tenant");
-        const row = Array.isArray(tenant) ? tenant[0] : tenant;
+      // Fallback for public/preview context where the user isn't authenticated yet
+      if (!tenantRow) {
+        const { data } = await (supabase.rpc as any)("get_first_active_public_tenant");
+        const row = Array.isArray(data) ? data[0] : data;
         if (row) {
-          setTenantData(row as any);
-          companyName = row.name ?? "";
-          companyCeoName = row.company_ceo_name ?? "";
+          tenantRow = row;
+          if (!resolvedTenantId && row.id) resolvedTenantId = row.id;
         }
+      }
+
+      if (tenantRow) {
+        setTenantData(tenantRow as any);
+        companyName = tenantRow.name ?? "";
+        companyCeoName = tenantRow.company_ceo_name ?? "";
       }
 
       const formattedStart = startDate
