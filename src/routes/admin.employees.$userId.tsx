@@ -26,7 +26,7 @@ import {
   ArrowLeft, User, ShieldCheck, FileText, ClipboardList, Wallet,
   AlertTriangle, CheckCircle2, XCircle, Plus, Trash2, StickyNote,
   Download, Eye, KeyRound, Loader2, Mail, Shield, Pencil, X, Check,
-  MessageSquare, Phone, Power, FolderOpen, History,
+  MessageSquare, Phone, Power, FolderOpen, History, Send,
 } from "lucide-react";
 
 interface ActivityLogEntry {
@@ -287,6 +287,26 @@ function AdminEmployeeDetailPage() {
             <SelectTrigger className="w-48 h-8 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>{STATUS_ORDER.map((s) => (<SelectItem key={s} value={s}>{STATUS_CONFIG[s].label}</SelectItem>))}</SelectContent>
           </Select>
+          {!isAdminProfile && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs gap-1.5"
+              onClick={() => navigate(`/admin/chat?user=${userId}`)}
+              title="Chat mit Mitarbeiter öffnen"
+            >
+              <MessageSquare className="h-3.5 w-3.5" /> Chat
+            </Button>
+          )}
+          {!isAdminProfile && email && email !== "—" && (
+            <ReminderButton
+              email={email}
+              firstName={firstName}
+              contractSigned={!!profile.contract_signed_at}
+              kycVerified={kyc?.status === "verifiziert"}
+              tenantName={tenant?.name ?? null}
+            />
+          )}
           <PasswordResetButton email={email} />
           {!isAdminProfile && (
             <DeleteEmployeeButton userId={userId!} fullName={profile.full_name} onDeleted={() => navigate("/admin/employees")} />
