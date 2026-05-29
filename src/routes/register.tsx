@@ -97,23 +97,30 @@ function RegisterPage() {
   const [contractContent, setContractContent] = useState("");
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const saved = ss.getItem(STORAGE_TENANT);
-    if (saved) setTenantId(saved);
-  }, []);
+  // Marker: wenn true, hat ein Invitation-Token den Tenant gesetzt und darf
+  // NICHT mehr von der Domain überschrieben werden.
+  const [tenantFromInvitation, setTenantFromInvitation] = useState(false);
 
-  // Auto-set tenant from domain context or fallback for preview/localhost
+  // Tenant IMMER aus der aktuellen Domain ableiten (per Subdomain-Routing).
+  // Sessionstorage-Cache wird bewusst NICHT verwendet, weil sonst ein
+  // alter Tenant aus einer vorherigen Session (z.B. Preview) am falschen
+  // Portal "kleben" bleibt → falsches Vertrags-Template, falsche tenant_id.
   useEffect(() => {
-    if (tenant && !tenantId) {
+    if (tenantFromInvitation) return; // Invitation hat Vorrang
+    if (tenant?.id) {
       setTenantId(tenant.id);
-    } else if (!tenant && !tenantId) {
+      ss.setItem(STORAGE_TENANT, tenant.id);
+    } else if (tenant === null) {
+      // useTenant() ist fertig, hat aber nichts gefunden (Preview/Localhost ohne Match)
       (supabase.rpc as any)("get_first_active_public_tenant").then(({ data }: any) => {
         const row = Array.isArray(data) ? data[0] : data;
-        if (row?.id) setTenantId(row.id);
+        if (row?.id) {
+          setTenantId(row.id);
+          ss.setItem(STORAGE_TENANT, row.id);
+        }
       });
     }
-  }, [tenant, tenantId]);
+  }, [tenant, tenantFromInvitation]);
 
   // Prefill E-Mail + Tenant aus Invitation-Token (Landing-Page → /register?token=…)
   useEffect(() => {
@@ -123,7 +130,10 @@ function RegisterPage() {
       const inv = Array.isArray(data) ? data[0] : data;
       if (inv && !inv.used) {
         if (inv.email && !email) setEmail(inv.email);
-        if (inv.tenant_id) setTenantId(inv.tenant_id);
+        if (inv.tenant_id) {
+          setTenantId(inv.tenant_id);
+          setTenantFromInvitation(true);
+        }
       }
     })();
   }, [token]);
