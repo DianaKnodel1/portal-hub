@@ -72,34 +72,48 @@ function AdminChatPage() {
   }, [user]);
 
   const loadConversations = async () => {
-    const { data: profiles } = await supabase.from("profiles").select("user_id, full_name");
-    if (!profiles) { setLoading(false); return; }
+    // 1 Query statt N*2: alle Nachrichten in/aus Admin-Postfach holen und client-seitig aggregieren.
+    const [profilesRes, convsRes, msgsRes] = await Promise.all([
+      supabase.from("profiles").select("user_id, full_name"),
+      supabase.from("chat_conversations").select("user_id, status, escalated_at"),
+      supabase
+        .from("chat_messages")
+        .select("sender_id, receiver_id, message, read, created_at")
+        .or(`sender_id.eq.${user!.id},receiver_id.eq.${user!.id}`)
+        .order("created_at", { ascending: false })
+        .limit(5000),
+    ]);
 
-    const { data: convs } = await supabase.from("chat_conversations").select("user_id, status, escalated_at");
-    const convMap = new Map((convs ?? []).map((c: any) => [c.user_id, c]));
+    const profiles = profilesRes.data ?? [];
+    if (!profiles.length) { setLoading(false); return; }
+    const profileMap = new Map(profiles.map((p: any) => [p.user_id, p.full_name as string]));
+    const convMap = new Map((convsRes.data ?? []).map((c: any) => [c.user_id, c]));
+
+    type Agg = { lastMessage: string; lastAt: string; unread: number };
+    const agg = new Map<string, Agg>();
+    for (const m of (msgsRes.data ?? []) as any[]) {
+      const partnerId = m.sender_id === user!.id ? m.receiver_id : m.sender_id;
+      if (!profileMap.has(partnerId)) continue;
+      let entry = agg.get(partnerId);
+      if (!entry) {
+        // Erste Nachricht (neueste, da DESC sortiert) → lastMessage
+        entry = { lastMessage: m.message, lastAt: m.created_at, unread: 0 };
+        agg.set(partnerId, entry);
+      }
+      if (m.sender_id === partnerId && !m.read) entry.unread += 1;
+    }
 
     const list: Conversation[] = [];
-    for (const p of profiles) {
-      const { data: unreadMsgs } = await supabase
-        .from("chat_messages").select("id")
-        .eq("sender_id", p.user_id).eq("receiver_id", user!.id).eq("read", false);
-
-      const { data: lastMsg } = await supabase
-        .from("chat_messages").select("message, created_at")
-        .or(`and(sender_id.eq.${p.user_id},receiver_id.eq.${user!.id}),and(sender_id.eq.${user!.id},receiver_id.eq.${p.user_id})`)
-        .order("created_at", { ascending: false }).limit(1);
-
-      if (!lastMsg?.length && !unreadMsgs?.length) continue;
-
-      const conv = convMap.get(p.user_id);
+    for (const [partnerId, a] of agg) {
+      const conv = convMap.get(partnerId);
       list.push({
-        user_id: p.user_id,
-        full_name: p.full_name,
+        user_id: partnerId,
+        full_name: profileMap.get(partnerId) ?? "Mitarbeiter",
         status: conv?.status ?? "direct",
         escalated_at: conv?.escalated_at ?? null,
-        unread: unreadMsgs?.length ?? 0,
-        lastMessage: lastMsg?.[0]?.message,
-        lastAt: lastMsg?.[0]?.created_at,
+        unread: a.unread,
+        lastMessage: a.lastMessage,
+        lastAt: a.lastAt,
       });
     }
 
