@@ -39,6 +39,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { EmployeeStatus } from "@/lib/status";
 import { hasFullAccess } from "@/lib/employee-utils";
+import { isLocalOrPreview } from "@/lib/domain-utils";
 import { cn } from "@/lib/utils";
 
 const ALWAYS_ALLOWED_PATHS = ["/dashboard", "/verification", "/contract", "/onboarding", "/personal-data", "/payroll-data", "/settings", "/documents"];
