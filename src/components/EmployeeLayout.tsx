@@ -39,6 +39,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { EmployeeStatus } from "@/lib/status";
 import { hasFullAccess } from "@/lib/employee-utils";
+import { isLocalOrPreview } from "@/lib/domain-utils";
 import { cn } from "@/lib/utils";
 
 const ALWAYS_ALLOWED_PATHS = ["/dashboard", "/verification", "/contract", "/onboarding", "/personal-data", "/payroll-data", "/settings", "/documents"];
@@ -221,6 +222,7 @@ function EmployeeSidebar({
 
 export default function EmployeeLayout() {
   const { user, loading, isAdmin } = useAuth();
+  const { tenant } = useTenant();
   const navigate = useNavigate();
   const location = useLocation();
   const [employeeStatus, setEmployeeStatus] = useState<EmployeeStatus | null>(null);
@@ -233,6 +235,28 @@ export default function EmployeeLayout() {
     if (!loading && !user) navigate("/login");
     if (!loading && user && isAdmin) navigate("/admin");
   }, [user, loading, isAdmin, navigate]);
+
+  // Self-Heal: Wenn der Mitarbeiter auf einer echten Portal-Subdomain eingeloggt
+  // ist und sein profile.tenant_id NICHT zum Domain-Tenant passt, automatisch
+  // korrigieren. Behebt Altbestand, der vor dem Subdomain-Tenant-Fix
+  // registriert wurde (z.B. dgi-tenant statt kadermarketing-tenant).
+  useEffect(() => {
+    if (!user || !tenant?.id) return;
+    if (isLocalOrPreview()) return; // niemals auf Preview/Localhost umhängen
+    (async () => {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("tenant_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (prof && prof.tenant_id !== tenant.id) {
+        await supabase
+          .from("profiles")
+          .update({ tenant_id: tenant.id })
+          .eq("user_id", user.id);
+      }
+    })();
+  }, [user, tenant?.id]);
 
   useEffect(() => {
     if (!user) return;
