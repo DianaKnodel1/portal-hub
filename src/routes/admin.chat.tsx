@@ -16,6 +16,7 @@ import { useChatNotifications } from "@/hooks/use-chat-notifications";
 import { Send, Bot, UserCheck, Search, MessageCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getLastSignIns } from "@/lib/last-sign-ins.functions";
+import { useSearchParams } from "@/lib/router-compat";
 
 interface Conversation {
   user_id: string;
@@ -65,6 +66,13 @@ function AdminChatPage() {
     enabled: true,
   });
   useEffect(() => { requestPermission(); }, [requestPermission]);
+
+  // Optional: ?user=<id> aus URL übernehmen (Deep-Link aus Mitarbeiter-Detail)
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const u = searchParams.get("user");
+    if (u) setSelectedUserId(u);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!user) return;
