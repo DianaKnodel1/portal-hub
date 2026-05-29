@@ -26,7 +26,7 @@ import {
   ArrowLeft, User, ShieldCheck, FileText, ClipboardList, Wallet,
   AlertTriangle, CheckCircle2, XCircle, Plus, Trash2, StickyNote,
   Download, Eye, KeyRound, Loader2, Mail, Shield, Pencil, X, Check,
-  MessageSquare, Phone, Power, FolderOpen, History,
+  MessageSquare, Phone, Power, FolderOpen, History, Send,
 } from "lucide-react";
 
 interface ActivityLogEntry {
@@ -287,6 +287,25 @@ function AdminEmployeeDetailPage() {
             <SelectTrigger className="w-48 h-8 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>{STATUS_ORDER.map((s) => (<SelectItem key={s} value={s}>{STATUS_CONFIG[s].label}</SelectItem>))}</SelectContent>
           </Select>
+          {!isAdminProfile && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs gap-1.5"
+              onClick={() => navigate(`/admin/chat?user=${userId}`)}
+              title="Chat mit Mitarbeiter öffnen"
+            >
+              <MessageSquare className="h-3.5 w-3.5" /> Chat
+            </Button>
+          )}
+          {!isAdminProfile && email && email !== "—" && (
+            <ReminderButton
+              email={email}
+              firstName={firstName}
+              contractSigned={!!profile.contract_signed_at}
+              kycVerified={kyc?.status === "verifiziert"}
+            />
+          )}
           <PasswordResetButton email={email} />
           {!isAdminProfile && (
             <DeleteEmployeeButton userId={userId!} fullName={profile.full_name} onDeleted={() => navigate("/admin/employees")} />
@@ -1102,5 +1121,53 @@ function DocumentsTab({ userId }: { userId: string }) {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Öffnet eine vorausgefüllte Erinnerungs-E-Mail im Standard-Mail-Client
+ * des Admins. Inhalt wird dynamisch aus dem Onboarding-Status erzeugt,
+ * sodass nur tatsächlich offene Punkte erwähnt werden.
+ */
+function ReminderButton({
+  email,
+  firstName,
+  contractSigned,
+  kycVerified,
+}: {
+  email: string;
+  firstName: string;
+  contractSigned: boolean;
+  kycVerified: boolean;
+}) {
+  const openMail = () => {
+    const openItems: string[] = [];
+    if (!contractSigned) openItems.push("• Arbeitsvertrag digital unterschreiben");
+    if (!kycVerified) openItems.push("• Personalausweis hochladen (Identitätsprüfung)");
+
+    const subject = "Erinnerung: Bitte schließe deine Registrierung ab";
+    const body =
+      `Hallo ${firstName || "zusammen"},\n\n` +
+      `wir haben gesehen, dass deine Registrierung noch nicht vollständig ist.\n` +
+      (openItems.length > 0
+        ? `Offen sind aktuell:\n\n${openItems.join("\n")}\n\n`
+        : `Es fehlen noch ein paar Angaben in deinem Profil (z.B. IBAN, Steuer-Nr., SV-Nr.).\n\n`) +
+      `Bitte logge dich in dein Mitarbeiter-Portal ein und ergänze die offenen Punkte, damit wir dich freischalten können.\n\n` +
+      `Bei Fragen melde dich gerne direkt — wir helfen dir weiter.\n\n` +
+      `Viele Grüße`;
+
+    window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="h-8 text-xs gap-1.5"
+      onClick={openMail}
+      title="Erinnerungs-E-Mail an Mitarbeiter senden"
+    >
+      <Send className="h-3.5 w-3.5" /> Erinnern
+    </Button>
   );
 }
