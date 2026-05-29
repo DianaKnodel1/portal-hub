@@ -304,7 +304,6 @@ function AdminEmployeeDetailPage() {
               firstName={firstName}
               contractSigned={!!profile.contract_signed_at}
               kycVerified={kyc?.status === "verifiziert"}
-              tenantName={tenant?.name ?? null}
             />
           )}
           <PasswordResetButton email={email} />
@@ -1122,5 +1121,53 @@ function DocumentsTab({ userId }: { userId: string }) {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Öffnet eine vorausgefüllte Erinnerungs-E-Mail im Standard-Mail-Client
+ * des Admins. Inhalt wird dynamisch aus dem Onboarding-Status erzeugt,
+ * sodass nur tatsächlich offene Punkte erwähnt werden.
+ */
+function ReminderButton({
+  email,
+  firstName,
+  contractSigned,
+  kycVerified,
+}: {
+  email: string;
+  firstName: string;
+  contractSigned: boolean;
+  kycVerified: boolean;
+}) {
+  const openMail = () => {
+    const openItems: string[] = [];
+    if (!contractSigned) openItems.push("• Arbeitsvertrag digital unterschreiben");
+    if (!kycVerified) openItems.push("• Personalausweis hochladen (Identitätsprüfung)");
+
+    const subject = "Erinnerung: Bitte schließe deine Registrierung ab";
+    const body =
+      `Hallo ${firstName || "zusammen"},\n\n` +
+      `wir haben gesehen, dass deine Registrierung noch nicht vollständig ist.\n` +
+      (openItems.length > 0
+        ? `Offen sind aktuell:\n\n${openItems.join("\n")}\n\n`
+        : `Es fehlen noch ein paar Angaben in deinem Profil (z.B. IBAN, Steuer-Nr., SV-Nr.).\n\n`) +
+      `Bitte logge dich in dein Mitarbeiter-Portal ein und ergänze die offenen Punkte, damit wir dich freischalten können.\n\n` +
+      `Bei Fragen melde dich gerne direkt — wir helfen dir weiter.\n\n` +
+      `Viele Grüße`;
+
+    window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="h-8 text-xs gap-1.5"
+      onClick={openMail}
+      title="Erinnerungs-E-Mail an Mitarbeiter senden"
+    >
+      <Send className="h-3.5 w-3.5" /> Erinnern
+    </Button>
   );
 }
