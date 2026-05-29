@@ -130,7 +130,10 @@ function RegisterPage() {
       const inv = Array.isArray(data) ? data[0] : data;
       if (inv && !inv.used) {
         if (inv.email && !email) setEmail(inv.email);
-        if (inv.tenant_id) setTenantId(inv.tenant_id);
+        if (inv.tenant_id) {
+          setTenantId(inv.tenant_id);
+          setTenantFromInvitation(true);
+        }
       }
     })();
   }, [token]);
