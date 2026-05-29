@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { FloatingChat } from "@/components/FloatingChat";
+import { MissingPayrollDataBanner } from "@/components/MissingPayrollDataBanner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -317,6 +318,7 @@ export default function EmployeeLayout() {
               <div data-tour="notifications"><NotificationBell /></div>
             </div>
           </header>
+          <MissingPayrollDataBanner />
           <main className="flex-1 overflow-auto">
             <OnboardingPopup />
             <GuidedOnboarding />
